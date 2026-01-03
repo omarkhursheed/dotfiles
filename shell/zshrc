@@ -1,13 +1,12 @@
-# Zsh configuration for local macOS machine
-# For remote Linux machines, use bashrc instead
+unalias gh 2>/dev/null
 
-# ============================================
-# Zsh-specific settings
-# ============================================
+# Source dotfiles common config (ML aliases, gpu, lg, etc.)
+[ -f ~/dotfiles/shell/common.sh ] && source ~/dotfiles/shell/common.sh
+
 # Enable colors
 autoload -U colors && colors
 
-# Set up prompt (simple and clean)
+# Set up prompt
 PROMPT='%F{green}%n%f:%F{blue}%1~%f$ '
 
 # Enable command-line completion
@@ -18,11 +17,8 @@ HISTFILE=~/.zsh_history
 HISTSIZE=999999999
 SAVEHIST=$HISTSIZE
 setopt appendhistory
-setopt share_history
-setopt hist_ignore_dups
-setopt hist_ignore_space
 
-# Modern completion system
+# Use modern completion system
 zstyle ':completion:*' auto-description 'specify: %d'
 zstyle ':completion:*' completer _expand _complete _correct _approximate
 zstyle ':completion:*' format 'Completing %d'
@@ -37,68 +33,65 @@ zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p
 zstyle ':completion:*' use-compctl false
 zstyle ':completion:*' verbose true
 
-# ============================================
-# Source common configuration
-# ============================================
-DOTFILES="$HOME/dotfiles"
-[ -f "$DOTFILES/shell/common.sh" ] && source "$DOTFILES/shell/common.sh"
+# Useful aliases
+alias ls='eza --color=auto'
+alias ll='eza -alF'
+alias la='eza -a'
+alias l='eza -F'
+alias tree='eza --tree'
+alias grep='grep --color=auto'
 
-# ============================================
-# macOS-specific PATH
-# ============================================
-# Homebrew
-eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null)" || true
-
-# VS Code
-export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-
-# Local bin
-export PATH="$HOME/.local/bin:$PATH"
-
-# ============================================
-# Conda (optional - comment out if using uv only)
-# ============================================
-__conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2>/dev/null)"
+# Conda configuration
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/Users/omarkhursheed/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
 if [ $? -eq 0 ]; then
     eval "$__conda_setup"
 else
-    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "$HOME/miniconda3/etc/profile.d/conda.sh"
+    if [ -f "/Users/omarkhursheed/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/Users/omarkhursheed/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/Users/omarkhursheed/miniconda3/bin:$PATH"
     fi
 fi
 unset __conda_setup
+# <<< conda initialize <<<
 
-# Conda helpers (only if conda exists)
-if command -v conda &>/dev/null; then
-    mkconda() {
-        conda create -n "$1" python=${2:-3.11} -y
-        conda activate "$1"
-    }
-    cenv() {
-        conda activate "$1"
-    }
-fi
+# Aliases for Python development
+alias py="python"
+alias ipy="ipython"
+alias jl="jupyter lab"
+alias pt="pytest"
 
-# ============================================
-# Zsh plugins (macOS with Homebrew)
-# ============================================
-# Syntax highlighting
-[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
-    source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+# Aliases for development utilities
+alias vim="nvim"
+alias rg="ripgrep"
 
-# Autosuggestions
-[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
-    source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# Function to create and activate a new Conda environment
+mkconda() {
+    conda create -n "$1" python=${2:-3.9}
+    conda activate "$1"
+}
 
-# fzf
+# Function to activate an existing Conda environment
+cenv() {
+    conda activate "$1"
+}
+
+# Function to start a new tmux session or attach to an existing one
+tm() {
+    if [ -z "$1" ]; then
+        tmux attach || tmux new-session
+    else
+        tmux new-session -s "$1" || tmux attach -t "$1"
+    fi
+}
+
+export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+export PATH=$PATH:/Users/omarkhursheed/workplace/code2prompt/target/release
+source /Users/omarkhursheed/.config/op/plugins.sh
+source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
-# ============================================
-# 1Password CLI plugin (if using)
-# ============================================
-[ -f ~/.config/op/plugins.sh ] && source ~/.config/op/plugins.sh
-
-# ============================================
-# Silence gh alias warning
-# ============================================
-unalias gh 2>/dev/null
+eval "$(rbenv init - zsh)"
+. "$HOME/.local/bin/env"

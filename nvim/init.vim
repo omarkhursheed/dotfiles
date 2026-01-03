@@ -1,109 +1,210 @@
-" Minimal neovim config - vim-friendly with modern features
-" This keeps your vim muscle memory while adding useful neovim features
-
-" ============================================
-" Basic Settings (works like vim)
-" ============================================
-set number                     " Show line numbers
-set relativenumber             " Relative line numbers
-set expandtab                  " Spaces instead of tabs
-set shiftwidth=4               " 4 spaces for indent
-set tabstop=4                  " 4 spaces for tab
-set softtabstop=4
-set autoindent                 " Copy indent from current line
-set smartindent                " Smart autoindenting
-set mouse=a                    " Enable mouse
-set clipboard+=unnamedplus     " Use system clipboard
-set ignorecase                 " Case insensitive search
-set smartcase                  " ...unless uppercase used
-set incsearch                  " Incremental search
-set hlsearch                   " Highlight search results
-set scrolloff=8                " Keep 8 lines above/below cursor
-set signcolumn=yes             " Always show sign column
-set updatetime=250             " Faster completion
-set timeoutlen=300             " Faster key sequence completion
-set splitright                 " Split windows to the right
-set splitbelow                 " Split windows below
-set hidden                     " Allow hidden buffers
-set nowrap                     " Don't wrap lines
-set cursorline                 " Highlight current line
-set termguicolors              " Enable 24-bit colors
+" Basic settings
+set number
+set relativenumber
+set expandtab
+set shiftwidth=2
+set softtabstop=2
+set mouse=a
+set clipboard+=unnamedplus
 syntax on
 filetype plugin indent on
 
-" ============================================
-" Leader key (space is easy to reach)
-" ============================================
+" Set leader key
 let mapleader = " "
 
-" ============================================
-" Essential keymaps (vim-style)
-" ============================================
-" Clear search highlight with Escape
+" Plugins
+call plug#begin('~/.config/nvim/plugged')
+" Theme
+Plug 'folke/tokyonight.nvim'
+
+" Status line
+Plug 'nvim-lualine/lualine.nvim'
+Plug 'nvim-tree/nvim-web-devicons'
+
+" File explorer
+Plug 'nvim-tree/nvim-tree.lua'
+
+" Fuzzy finder
+Plug 'nvim-lua/plenary.nvim'  " Required dependency for telescope
+Plug 'nvim-telescope/telescope.nvim', { 'branch': '0.1.x' }
+
+" Treesitter for better syntax highlighting
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+
+" LSP Support
+Plug 'neovim/nvim-lspconfig'
+Plug 'williamboman/mason.nvim', {'do': ':MasonUpdate'}
+Plug 'williamboman/mason-lspconfig.nvim'
+
+" Autocompletion
+Plug 'hrsh7th/nvim-cmp'
+Plug 'hrsh7th/cmp-nvim-lsp'
+Plug 'hrsh7th/cmp-buffer'
+Plug 'hrsh7th/cmp-path'
+Plug 'L3MON4D3/LuaSnip'
+call plug#end()
+
+" Set colorscheme
+colorscheme tokyonight-night
+
+" Quick actions (Space + key)
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+nnoremap <leader>e :NvimTreeToggle<CR>
 nnoremap <Esc> :nohlsearch<CR>
 
-" Quick save
-nnoremap <leader>w :w<CR>
-
-" Quick quit
-nnoremap <leader>q :q<CR>
-
-" Better window navigation (Ctrl+hjkl)
+" Window navigation (Ctrl + hjkl)
 nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 
-" Resize windows with arrows
-nnoremap <C-Up> :resize +2<CR>
-nnoremap <C-Down> :resize -2<CR>
-nnoremap <C-Left> :vertical resize -2<CR>
-nnoremap <C-Right> :vertical resize +2<CR>
+" File explorer and search
+nnoremap <C-n> :NvimTreeToggle<CR>
+nnoremap <leader>ff <cmd>Telescope find_files<cr>
+nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+nnoremap <leader>fb <cmd>Telescope buffers<cr>
 
-" Move lines up/down in visual mode
-vnoremap J :m '>+1<CR>gv=gv
-vnoremap K :m '<-2<CR>gv=gv
+" LSP keybindings
+nnoremap <leader>gd <cmd>lua vim.lsp.buf.definition()<CR>
+nnoremap <leader>gi <cmd>lua vim.lsp.buf.implementation()<CR>
+nnoremap <leader>gr <cmd>lua vim.lsp.buf.references()<CR>
+nnoremap <leader>rn <cmd>lua vim.lsp.buf.rename()<CR>
+nnoremap <leader>ca <cmd>lua vim.lsp.buf.code_action()<CR>
+nnoremap K <cmd>lua vim.lsp.buf.hover()<CR>
+nnoremap <leader>d <cmd>lua vim.diagnostic.open_float()<CR>
+nnoremap [d <cmd>lua vim.diagnostic.goto_prev()<CR>
+nnoremap ]d <cmd>lua vim.diagnostic.goto_next()<CR>
 
-" Stay in visual mode when indenting
-vnoremap < <gv
-vnoremap > >gv
+" Mason keybinding
+nnoremap <leader>m <cmd>Mason<CR>
 
-" Quick buffer navigation
-nnoremap <leader>bn :bnext<CR>
-nnoremap <leader>bp :bprevious<CR>
-nnoremap <leader>bd :bdelete<CR>
+" Simple Lua setup
+lua << EOF
+-- Setup lualine with a proper theme
+require('lualine').setup({
+  options = {
+    theme = 'tokyonight',
+    component_separators = { left = '', right = ''},
+    section_separators = { left = '', right = ''},
+  }
+})
 
-" ============================================
-" File explorer (netrw - built in)
-" ============================================
-" Toggle with <leader>e
-nnoremap <leader>e :Lexplore 25<CR>
+-- Configure nvim-tree with on_attach
+require('nvim-tree').setup({
+  auto_reload_on_write = true,
+  disable_netrw = true,
+  hijack_cursor = true,
+  hijack_netrw = true,
+  sort_by = "name",
+  sync_root_with_cwd = true,
+  on_attach = function(bufnr)
+    local api = require('nvim-tree.api')
+    
+    local function opts(desc)
+      return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+    end
 
-let g:netrw_banner = 0         " Hide banner
-let g:netrw_liststyle = 3      " Tree view
-let g:netrw_browse_split = 4   " Open in prior window
-let g:netrw_winsize = 25       " 25% width
+    -- Apply default mappings
+    api.config.mappings.default_on_attach(bufnr)
 
-" ============================================
-" Python-specific settings
-" ============================================
-autocmd FileType python setlocal shiftwidth=4 tabstop=4
+    -- Add custom mappings
+    vim.keymap.set('n', '<C-t>', api.node.open.tab, opts('Open: New Tab'))
+    vim.keymap.set('n', '<C-v>', api.node.open.vertical, opts('Open: Vertical Split'))
+    vim.keymap.set('n', '<C-x>', api.node.open.horizontal, opts('Open: Horizontal Split'))
+  end,
+  view = {
+    width = 30,
+    side = "left",
+    signcolumn = "yes",
+  },
+  renderer = {
+    group_empty = true,
+    icons = {
+      show = {
+        file = true,
+        folder = true,
+        folder_arrow = true,
+        git = true,
+      },
+    },
+  },
+  update_focused_file = {
+    enable = true,
+    update_root = true,
+  },
+  diagnostics = {
+    enable = true,
+    show_on_dirs = false,
+    icons = {
+      hint = "",
+      info = "",
+      warning = "",
+      error = "",
+    },
+  },
+  filters = {
+    dotfiles = false,
+  },
+  git = {
+    enable = true,
+    ignore = true,
+  },
+  actions = {
+    open_file = {
+      quit_on_open = false,
+      resize_window = true,
+    },
+  },
+})
 
-" ============================================
-" Quick terminal
-" ============================================
-nnoremap <leader>t :split<CR>:terminal<CR>:resize 15<CR>i
+-- Telescope setup is now in after/plugin/telescope_fix.lua
 
-" Exit terminal mode with Escape
-tnoremap <Esc> <C-\><C-n>
+-- Configure Treesitter
+require('nvim-treesitter.configs').setup({
+  ensure_installed = { "lua", "vim", "vimdoc", "python", "javascript", "typescript", "json" },
+  sync_install = false,
+  auto_install = true,
+  highlight = {
+    enable = true,
+    additional_vim_regex_highlighting = false,
+  },
+})
 
-" ============================================
-" Colors (use built-in colorschemes)
-" ============================================
-" Try these colorschemes (included with neovim):
-" :colorscheme desert
-" :colorscheme slate
-" :colorscheme industry
+-- Basic LSP setup in init.vim, more detailed setup in after/plugin files
+-- This ensures everything is loaded properly
 
-" Default to something readable
-silent! colorscheme slate
+-- Mason setup for package management
+local mason_ok, mason = pcall(require, "mason")
+if mason_ok then
+  mason.setup()
+end
+
+local mason_lspconfig_ok, mason_lspconfig = pcall(require, "mason-lspconfig")
+if mason_lspconfig_ok then
+  mason_lspconfig.setup({
+    ensure_installed = { "lua_ls", "pyright", "ts_ls", "jsonls" },
+    automatic_installation = true,
+  })
+end
+
+-- Basic lspconfig setup - more comprehensive setup in after/plugin
+local lspconfig_ok, lspconfig = pcall(require, 'lspconfig')
+if lspconfig_ok then
+  -- Get capabilities from cmp_nvim_lsp if available
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+  
+  local cmp_nvim_lsp_ok, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
+  if cmp_nvim_lsp_ok then
+    capabilities = cmp_nvim_lsp.default_capabilities()
+  end
+  
+  -- Setup language servers
+  local servers = { "lua_ls", "pyright", "ts_ls", "jsonls" }
+  for _, server in ipairs(servers) do
+    lspconfig[server].setup({
+      capabilities = capabilities
+    })
+  end
+end
+EOF
