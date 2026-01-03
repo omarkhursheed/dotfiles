@@ -1,0 +1,64 @@
+[user]
+    name = Mohammad Omar Khursheed
+    email = omarkhu@gmail.com
+
+[init]
+    defaultBranch = main
+
+[core]
+    excludesfile = ~/.gitignore_global
+    pager = less -FRX
+    autocrlf = input
+
+[pull]
+    rebase = true
+
+[push]
+    default = current
+    autoSetupRemote = true
+
+[fetch]
+    prune = true
+
+[diff]
+    colorMoved = default
+
+[merge]
+    conflictstyle = diff3
+
+[alias]
+    # Status
+    st = status -sb
+
+    # Branching
+    co = checkout
+    br = branch
+    sw = switch
+
+    # Commits
+    ci = commit
+    amend = commit --amend --no-edit
+
+    # Staging
+    aa = add --all
+    unstage = reset HEAD --
+
+    # Logs
+    lg = log --oneline --graph --decorate -20
+    lga = log --oneline --graph --decorate --all -30
+    last = log -1 HEAD --stat
+    recent = branch --sort=-committerdate --format='%(committerdate:relative)%09%(refname:short)'
+
+    # Diffs
+    df = diff
+    dfs = diff --staged
+
+    # Utilities
+    aliases = config --get-regexp alias
+    whoami = config user.email
+
+[color]
+    ui = auto
+
+[rerere]
+    enabled = true

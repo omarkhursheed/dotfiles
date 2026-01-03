@@ -1,0 +1,104 @@
+# Zsh configuration for local macOS machine
+# For remote Linux machines, use bashrc instead
+
+# ============================================
+# Zsh-specific settings
+# ============================================
+# Enable colors
+autoload -U colors && colors
+
+# Set up prompt (simple and clean)
+PROMPT='%F{green}%n%f:%F{blue}%1~%f$ '
+
+# Enable command-line completion
+autoload -Uz compinit && compinit
+
+# History settings
+HISTFILE=~/.zsh_history
+HISTSIZE=999999999
+SAVEHIST=$HISTSIZE
+setopt appendhistory
+setopt share_history
+setopt hist_ignore_dups
+setopt hist_ignore_space
+
+# Modern completion system
+zstyle ':completion:*' auto-description 'specify: %d'
+zstyle ':completion:*' completer _expand _complete _correct _approximate
+zstyle ':completion:*' format 'Completing %d'
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' menu select=2
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*' list-prompt %SAt %p: Hit TAB for more, or the character to insert%s
+zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'
+zstyle ':completion:*' menu select=long
+zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p%s
+zstyle ':completion:*' use-compctl false
+zstyle ':completion:*' verbose true
+
+# ============================================
+# Source common configuration
+# ============================================
+DOTFILES="$HOME/dotfiles"
+[ -f "$DOTFILES/shell/common.sh" ] && source "$DOTFILES/shell/common.sh"
+
+# ============================================
+# macOS-specific PATH
+# ============================================
+# Homebrew
+eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null)" || true
+
+# VS Code
+export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+
+# Local bin
+export PATH="$HOME/.local/bin:$PATH"
+
+# ============================================
+# Conda (optional - comment out if using uv only)
+# ============================================
+__conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2>/dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "$HOME/miniconda3/etc/profile.d/conda.sh"
+    fi
+fi
+unset __conda_setup
+
+# Conda helpers (only if conda exists)
+if command -v conda &>/dev/null; then
+    mkconda() {
+        conda create -n "$1" python=${2:-3.11} -y
+        conda activate "$1"
+    }
+    cenv() {
+        conda activate "$1"
+    }
+fi
+
+# ============================================
+# Zsh plugins (macOS with Homebrew)
+# ============================================
+# Syntax highlighting
+[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
+    source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# Autosuggestions
+[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
+    source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# fzf
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# ============================================
+# 1Password CLI plugin (if using)
+# ============================================
+[ -f ~/.config/op/plugins.sh ] && source ~/.config/op/plugins.sh
+
+# ============================================
+# Silence gh alias warning
+# ============================================
+unalias gh 2>/dev/null

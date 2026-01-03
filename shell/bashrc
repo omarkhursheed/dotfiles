@@ -1,0 +1,86 @@
+# Bash configuration for remote Linux machines
+# Designed to be minimal and portable
+
+# ============================================
+# If not running interactively, don't do anything
+# ============================================
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# ============================================
+# History settings
+# ============================================
+HISTCONTROL=ignoreboth
+HISTSIZE=100000
+HISTFILESIZE=200000
+shopt -s histappend
+
+# ============================================
+# Shell options
+# ============================================
+shopt -s checkwinsize
+shopt -s globstar 2>/dev/null
+
+# ============================================
+# Prompt (simple, shows hostname for SSH)
+# ============================================
+PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+
+# ============================================
+# Enable color support
+# ============================================
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+fi
+
+# ============================================
+# Source common configuration
+# ============================================
+DOTFILES="$HOME/dotfiles"
+[ -f "$DOTFILES/shell/common.sh" ] && source "$DOTFILES/shell/common.sh"
+
+# ============================================
+# PATH additions
+# ============================================
+export PATH="$HOME/.local/bin:$PATH"
+
+# Cargo/Rust (if installed)
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
+
+# ============================================
+# Conda (if installed)
+# ============================================
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    . "$HOME/miniconda3/etc/profile.d/conda.sh"
+elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
+    . "$HOME/anaconda3/etc/profile.d/conda.sh"
+fi
+
+# Conda helpers
+if command -v conda &>/dev/null; then
+    mkconda() {
+        conda create -n "$1" python=${2:-3.11} -y
+        conda activate "$1"
+    }
+    cenv() {
+        conda activate "$1"
+    }
+fi
+
+# ============================================
+# fzf (if installed)
+# ============================================
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# ============================================
+# Bash completion
+# ============================================
+if ! shopt -oq posix; then
+    if [ -f /usr/share/bash-completion/bash_completion ]; then
+        . /usr/share/bash-completion/bash_completion
+    elif [ -f /etc/bash_completion ]; then
+        . /etc/bash_completion
+    fi
+fi

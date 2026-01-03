@@ -1,0 +1,30 @@
+# SSH config defaults - include this at the top of ~/.ssh/config
+# These settings apply to all hosts unless overridden
+
+Host *
+    # Keep connections alive (prevents "broken pipe" disconnects)
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+
+    # Connection multiplexing (faster subsequent connections)
+    ControlMaster auto
+    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPersist 600
+
+    # Add keys to agent
+    AddKeysToAgent yes
+
+    # Use keychain on macOS
+    IgnoreUnknown UseKeychain
+    UseKeychain yes
+
+    # Compression for slow connections
+    Compression yes
+
+# Example ML server entry:
+# Host ml-server
+#     HostName 192.168.1.100
+#     User root
+#     Port 22
+#     LocalForward 8888 localhost:8888  # Jupyter
+#     LocalForward 6006 localhost:6006  # TensorBoard
