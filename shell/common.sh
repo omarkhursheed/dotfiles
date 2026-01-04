@@ -193,3 +193,45 @@ portfwd() {
 export EDITOR='nvim'
 alias vim='nvim'
 alias vi='nvim'
+
+# ============================================
+# Experiment tracking
+# ============================================
+exp() {
+    local name="${1:-exp}"
+    local dir="experiments/$(date +%Y%m%d)_${name}"
+    mkdir -p "$dir"
+    cd "$dir"
+    echo "Created $dir"
+}
+
+# ============================================
+# Project setup (Cursor/VSCode + uv)
+# ============================================
+# Initialize ML project with uv and Cursor settings
+projinit() {
+    # Create uv project if not already initialized
+    if [ ! -f "pyproject.toml" ]; then
+        uv init
+        echo "Initialized uv project"
+    fi
+
+    # Create venv if missing
+    if [ ! -d ".venv" ]; then
+        uv venv
+        echo "Created .venv"
+    fi
+
+    # Create .vscode settings
+    mkdir -p .vscode
+    cat > .vscode/settings.json << 'EOF'
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.analysis.extraPaths": ["${workspaceFolder}/src"],
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    }
+}
+EOF
+    echo "Created .vscode/settings.json"
+}
