@@ -33,12 +33,7 @@ zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p
 zstyle ':completion:*' use-compctl false
 zstyle ':completion:*' verbose true
 
-# Useful aliases
-alias ls='eza --color=auto'
-alias ll='eza -alF'
-alias la='eza -a'
-alias l='eza -F'
-alias tree='eza --tree'
+# Useful aliases (eza/ls handled by common.sh with fallbacks)
 alias grep='grep --color=auto'
 
 # Conda configuration
@@ -64,8 +59,7 @@ alias jl="jupyter lab"
 alias pt="pytest"
 
 # Aliases for development utilities
-alias vim="nvim"
-alias rg="ripgrep"
+command -v nvim &>/dev/null && alias vim="nvim"
 
 # Function to create and activate a new Conda environment
 mkconda() {
@@ -87,12 +81,34 @@ tm() {
     fi
 }
 
-export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-export PATH=$PATH:/Users/omarkhursheed/workplace/code2prompt/target/release
-source /Users/omarkhursheed/.config/op/plugins.sh
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# Copy stdin to clipboard via OSC 52 (works over SSH)
+yk() {
+    local buf=$(cat "$@")
+    local buf_len=${#buf}
+    local maxlen=74994
+    if [[ $buf_len -gt $maxlen ]]; then
+        >&2 echo "Input length ($buf_len) longer than max length ($maxlen), output will be truncated"
+    fi
+    printf "\033]52;c;$(printf %s "$buf" | head -c $maxlen | base64 | tr -d '\r\n')\a"
+    >&2 echo "Copied $buf_len characters to clipboard"
+}
+
+# Resolve path to absolute, copy to clipboard, and print
+rl() {
+    local p=$(readlink -f "${1:-.}")
+    echo "$p" | yk
+    echo "$p"
+}
+
+# macOS-specific paths
+[ -d "/Applications/Visual Studio Code.app" ] && export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+[ -d "/Users/omarkhursheed/workplace/code2prompt/target/release" ] && export PATH="$PATH:/Users/omarkhursheed/workplace/code2prompt/target/release"
+
+# Optional tools (guarded for portability)
+[ -f /Users/omarkhursheed/.config/op/plugins.sh ] && source /Users/omarkhursheed/.config/op/plugins.sh
+[ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+[ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-eval "$(rbenv init - zsh)"
-eval "$(zoxide init zsh)"
-. "$HOME/.local/bin/env"
+command -v rbenv &>/dev/null && eval "$(rbenv init - zsh)"
+command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
+[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
