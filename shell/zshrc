@@ -9,8 +9,14 @@ autoload -U colors && colors
 # Set up prompt
 PROMPT='%F{green}%n%f:%F{blue}%1~%f$ '
 
-# Enable command-line completion
-autoload -Uz compinit && compinit
+# Enable command-line completion: full rescan at most once a day (picks up
+# newly installed tools), cached fast path (-C) otherwise
+autoload -Uz compinit
+if [ ! -f ~/.zcompdump ] || [ -n "$(find ~/.zcompdump -mtime +1 2>/dev/null)" ]; then
+  compinit
+else
+  compinit -C
+fi
 
 # History settings
 HISTFILE=~/.zsh_history
@@ -36,21 +42,13 @@ zstyle ':completion:*' verbose true
 # Useful aliases (eza/ls handled by common.sh with fallbacks)
 alias grep='grep --color=auto'
 
-# Conda configuration
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/omarkhursheed/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/omarkhursheed/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/omarkhursheed/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/omarkhursheed/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
+# Conda: lazy-load on first use (the init hook spawned Python on every shell
+# start; envs removed 2026-06-09, YAML exports on safety_project_backups drive)
+conda() {
+    unfunction conda
+    eval "$('/Users/omarkhursheed/miniconda3/bin/conda' 'shell.zsh' 'hook' 2>/dev/null)"
+    conda "$@"
+}
 
 # Aliases for Python development
 alias py="python"
@@ -112,3 +110,17 @@ rl() {
 command -v rbenv &>/dev/null && eval "$(rbenv init - zsh)"
 command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+
+# Machine-specific settings (secrets, local paths)
+[ -f ~/.zshrc.local ] && source ~/.zshrc.local
+
+# Fix RunPod node after reset. Usage: rpfix [ip port]
+# With args: updates SSH config then bootstraps. Without: just bootstraps.
+rpfix() {
+    if [[ -n "$1" && -n "$2" ]]; then
+        sed -i '' '/^Host runpod$/,/^Host /{/HostName/s/.*/    HostName '"$1"'/; /Port/s/.*/    Port '"$2"'/}' ~/.ssh/config
+        ssh-keygen -R "[$1]:$2" 2>/dev/null
+        echo "Updated runpod -> $1:$2"
+    fi
+    ssh -o StrictHostKeyChecking=accept-new runpod "cp -r /workspace-vast/mohammadk/git/dotfiles ~/dotfiles && ~/dotfiles/install.sh && ln -sf ~/dotfiles/shell/zshrc ~/.zshrc && sudo chsh -s /usr/bin/zsh mohammadk"
+}
